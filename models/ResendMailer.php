@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Osmium\Services\Resend\Models;
 
-use Osmium\Core\Library\MailerInterface;
+use Osmium\Core\Library\PlainTextMailer;
 
 /**
  * Sends mail via Resend's email API (JSON POST with a bearer API key). Plain
@@ -15,7 +15,7 @@ use Osmium\Core\Library\MailerInterface;
  * Resend only sends from an address on a verified domain, so the From
  * address on the Email settings page must be on one.
  */
-class ResendMailer implements MailerInterface
+class ResendMailer implements PlainTextMailer
 {
     private const SEND_URL = 'https://api.resend.com/emails';
     private const USER_AGENT = 'osmium-resend/1.0';
@@ -26,10 +26,15 @@ class ResendMailer implements MailerInterface
      * @param array<int, array{email: string, name?: string}> $recipients
      * @return array{success: bool, error?: string}
      */
-    public function send(array $recipients, string $subject, string $htmlBody): array
+    public function send(array $recipients, string $subject, string $htmlBody, ?string $textBody = null): array
     {
         try {
-            $this->postMessage($recipients, $subject, $htmlBody);
+            $this->postMessage(
+                recipients: $recipients,
+                subject: $subject,
+                htmlBody: $htmlBody,
+                textBody: $textBody,
+            );
             return ['success' => true];
         } catch (\Exception $e) {
             return ['success' => false, 'error' => $e->getMessage()];
@@ -39,7 +44,7 @@ class ResendMailer implements MailerInterface
     /**
      * @param array<int, array{email: string, name?: string}> $recipients
      */
-    private function postMessage(array $recipients, string $subject, string $htmlBody): void
+    private function postMessage(array $recipients, string $subject, string $htmlBody, ?string $textBody): void
     {
         $notReady = !ResendConfig::isReady();
         if ($notReady) throw new \RuntimeException('Resend is not configured: set the API key on the Resend settings page.');
@@ -55,15 +60,20 @@ class ResendMailer implements MailerInterface
             $recipients,
         );
 
+        $message = [
+            'from' => $from,
+            'to' => $to,
+            'subject' => $subject,
+            'html' => $htmlBody,
+        ];
+        $hasText = $textBody !== null;
+        if ($hasText) $message['text'] = $textBody;
+        $payload = \json_encode($message);
+
         $ch = \curl_init(self::SEND_URL);
         \curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => \json_encode([
-                'from' => $from,
-                'to' => $to,
-                'subject' => $subject,
-                'html' => $htmlBody,
-            ]),
+            CURLOPT_POSTFIELDS => $payload,
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . ResendConfig::get()->apiKey,
                 'Content-Type: application/json',

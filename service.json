@@ -1,7 +1,7 @@
 {
     "id": "resend",
     "name": "Resend",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Send site email through Resend's HTTP API - a simple developer-friendly API with a free plan, and useful where hosting blocks outbound SMTP. Appears as a provider on the Email settings page.",
     "category": "email",
     "author": {
