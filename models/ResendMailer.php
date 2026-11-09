@@ -55,7 +55,7 @@ class ResendMailer implements PlainTextMailer
 
         $to = \array_map(
             fn (array $recipient) => isset($recipient['name'])
-                ? "{$recipient['name']} <{$recipient['email']}>"
+                ? \str_replace(['<', '>', ',', '"', "\r", "\n"], '', (string) $recipient['name']) . " <{$recipient['email']}>" // A name must not add recipients or headers
                 : $recipient['email'],
             $recipients,
         );
