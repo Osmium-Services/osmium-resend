@@ -1,6 +1,7 @@
 ---
 title: Send your site's email through Resend
 tags: email, resend, mail provider, smtp, sending, deliverability
+page: admin/settings/resend
 ---
 
 **Resend** sends your site's email, such as order confirmations and sign-in codes, through Resend's service instead of SMTP. It is useful where your hosting blocks outbound SMTP.
